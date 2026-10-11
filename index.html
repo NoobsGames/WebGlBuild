@@ -1,107 +1,112 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no">
-  <title>Idle-Isekai</title>
-  <link rel="stylesheet" href="TemplateData/style.css">
-</head>
-<body>
-  <canvas id="unity-canvas" width=1280 height=720 tabindex="-1"></canvas>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Unity WebGL Player | Idle-Isekai</title>
+    <link rel="stylesheet" href="TemplateData/style.css">
+  </head>
+  <body>
+    <div id="unity-container" class="unity-desktop">
+      <canvas id="unity-canvas" width=1280 height=720 tabindex="-1"></canvas>
+      <div id="unity-loading-bar">
+        <div id="unity-logo"></div>
+        <div id="unity-progress-bar-empty">
+          <div id="unity-progress-bar-full"></div>
+        </div>
+      </div>
+      <div id="unity-warning"> </div>
+    </div>
+    <script>
 
-  <div id="loading">
-    <div id="progress-track"><div id="progress-fill"></div></div>
-  </div>
+      var container = document.querySelector("#unity-container");
+      var canvas = document.querySelector("#unity-canvas");
+      var loadingBar = document.querySelector("#unity-loading-bar");
+      var progressBarFull = document.querySelector("#unity-progress-bar-full");
+      var warningBanner = document.querySelector("#unity-warning");
 
-  <div id="error-box"></div>
+      // Fill the whole browser window at any resolution.
+      // FILL_WINDOW = true  -> fill the window (high-DPI/4K friendly).
+      // FILL_WINDOW = false -> keep the design aspect ratio, scale to fit.
+      var FILL_WINDOW = true;
+      var DESIGN_WIDTH = 1280;
+      var DESIGN_HEIGHT = 720;
 
-  <script>
-    // =====================================================================
-    //  Canvas sizing
-    //  ------------------------------------------------------------------
-    //  FILL_WINDOW = true   -> the game fills the whole browser window at
-    //                          any resolution. High-DPI / 4K monitors get
-    //                          a full-size game instead of a tiny canvas.
-    //                          The in-game camera still letterboxes the
-    //                          battle view to 16:9 and the UI scales itself.
-    //
-    //  FILL_WINDOW = false  -> keep the DESIGN aspect ratio below and scale
-    //                          it up to fit the window (centered).
-    // =====================================================================
-    var FILL_WINDOW = true;
-    var DESIGN_WIDTH = 1280;
-    var DESIGN_HEIGHT = 720;
-
-    var canvasEl = document.getElementById("unity-canvas");
-
-    function sizeCanvas() {
-      var w = window.innerWidth;
-      var h = window.innerHeight;
-
-      if (!FILL_WINDOW) {
-        var scale = Math.min(w / DESIGN_WIDTH, h / DESIGN_HEIGHT);
-        w = Math.floor(DESIGN_WIDTH * scale);
-        h = Math.floor(DESIGN_HEIGHT * scale);
+      function resizeCanvas() {
+        var w = window.innerWidth;
+        var h = window.innerHeight;
+        if (!FILL_WINDOW) {
+          var scale = Math.min(w / DESIGN_WIDTH, h / DESIGN_HEIGHT);
+          w = Math.floor(DESIGN_WIDTH * scale);
+          h = Math.floor(DESIGN_HEIGHT * scale);
+        }
+        canvas.style.width = w + "px";
+        canvas.style.height = h + "px";
+        container.style.width = w + "px";
+        container.style.height = h + "px";
       }
 
-      canvasEl.style.width = w + "px";
-      canvasEl.style.height = h + "px";
-    }
+      window.addEventListener("resize", resizeCanvas);
+      resizeCanvas();
 
-    window.addEventListener("resize", sizeCanvas);
-    window.addEventListener("orientationchange", sizeCanvas);
-    sizeCanvas();
+      // Shows a permanent error message on top of the canvas if type=='error'.
+      // If type=='warning', a yellow highlight color is used.
+      function unityShowBanner(msg, type) {
+        function updateBannerVisibility() {
+          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+        }
+        var div = document.createElement('div');
+        div.innerHTML = msg;
+        warningBanner.appendChild(div);
+        if (type == 'error') div.style = 'background: red; padding: 10px;';
+        else {
+          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
+          setTimeout(function() {
+            warningBanner.removeChild(div);
+            updateBannerVisibility();
+          }, 5000);
+        }
+        updateBannerVisibility();
+      }
 
-    // =====================================================================
-    //  Unity loader configuration
-    // =====================================================================
-    var buildFolder = "Build";
-    var loaderFile = buildFolder + "/WebGL flexible test.loader.js";
+      var buildUrl = "Build";
+      var loaderUrl = buildUrl + "/take 4 .loader.js";
+      var config = {
+        dataUrl: buildUrl + "/take 4 .data.unityweb",
+        frameworkUrl: buildUrl + "/take 4 .framework.js.unityweb",
+        codeUrl: buildUrl + "/take 4 .wasm.unityweb",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "NoobsGames",
+        productName: "Idle-Isekai",
+        productVersion: "0.1.13",
+        showBanner: unityShowBanner,
+      };
 
-    var unityConfig = {
-      dataUrl: buildFolder + "/WebGL flexible test.data.unityweb",
-      frameworkUrl: buildFolder + "/WebGL flexible test.framework.js.unityweb",
-        codeUrl: buildFolder + "/WebGL flexible test.wasm.unityweb",
-      streamingAssetsUrl: "StreamingAssets",
-      companyName: "NoobsGames",
-      productName: "Idle-Isekai",
-      productVersion: "0.1.13",
-    };
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        var meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+        document.getElementsByTagName('head')[0].appendChild(meta);
+        container.className = "unity-mobile";
+        canvas.className = "unity-mobile";
+      }
 
-    // =====================================================================
-    //  Boot
-    // =====================================================================
-    var loadingEl = document.getElementById("loading");
-    var fillEl = document.getElementById("progress-fill");
-    var errorEl = document.getElementById("error-box");
+      loadingBar.style.display = "block";
 
-    function showError(message) {
-      loadingEl.style.display = "none";
-      errorEl.style.display = "block";
-      errorEl.textContent = message;
-    }
+      var script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = () => {
+        createUnityInstance(canvas, config, (progress) => {
+          progressBarFull.style.width = 100 * progress + "%";
+        }).then((unityInstance) => {
+          loadingBar.style.display = "none";
+          resizeCanvas();
+        }).catch((message) => {
+          alert(message);
+        });
+      };
+      document.body.appendChild(script);
 
-    var loaderScript = document.createElement("script");
-    loaderScript.src = loaderFile;
-
-    loaderScript.onload = function () {
-      createUnityInstance(canvasEl, unityConfig, function (progress) {
-        fillEl.style.width = (progress * 100) + "%";
-      }).then(function () {
-        loadingEl.style.display = "none";
-        // Re-apply the size now that Unity owns the canvas.
-        sizeCanvas();
-      }).catch(function (message) {
-        showError(message);
-      });
-    };
-
-    loaderScript.onerror = function () {
-      showError("Failed to load the game build: " + loaderFile);
-    };
-
-    document.body.appendChild(loaderScript);
-  </script>
-</body>
+    </script>
+  </body>
 </html>
