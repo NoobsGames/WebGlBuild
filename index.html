@@ -1,40 +1,107 @@
 <!DOCTYPE html>
-<html lang="en-us">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity WebGL Player | Idle-Isekai</title>
-  </head>
-  <body style="text-align: center; padding: 0; border: 0; margin: 0;">
-    <canvas id="unity-canvas" width=1280 height=720 tabindex="-1" style="width: 1280px; height: 720px; background: #231F20"></canvas>
-    <script src="Build/WebGl Vs 0.3.7.loader.js"></script>
-    <script>
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // Mobile device style: fill the whole browser client area with the game canvas:
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no">
+  <title>Idle-Isekai</title>
+  <link rel="stylesheet" href="TemplateData/style.css">
+</head>
+<body>
+  <canvas id="unity-canvas" width=1280 height=720 tabindex="-1"></canvas>
 
-        var canvas = document.querySelector("#unity-canvas");
-        canvas.style.width = "100%";
-        canvas.style.height = "100%";
-        canvas.style.position = "fixed";
+  <div id="loading">
+    <div id="progress-track"><div id="progress-fill"></div></div>
+  </div>
 
-        document.body.style.textAlign = "left";
+  <div id="error-box"></div>
+
+  <script>
+    // =====================================================================
+    //  Canvas sizing
+    //  ------------------------------------------------------------------
+    //  FILL_WINDOW = true   -> the game fills the whole browser window at
+    //                          any resolution. High-DPI / 4K monitors get
+    //                          a full-size game instead of a tiny canvas.
+    //                          The in-game camera still letterboxes the
+    //                          battle view to 16:9 and the UI scales itself.
+    //
+    //  FILL_WINDOW = false  -> keep the DESIGN aspect ratio below and scale
+    //                          it up to fit the window (centered).
+    // =====================================================================
+    var FILL_WINDOW = true;
+    var DESIGN_WIDTH = 1280;
+    var DESIGN_HEIGHT = 720;
+
+    var canvasEl = document.getElementById("unity-canvas");
+
+    function sizeCanvas() {
+      var w = window.innerWidth;
+      var h = window.innerHeight;
+
+      if (!FILL_WINDOW) {
+        var scale = Math.min(w / DESIGN_WIDTH, h / DESIGN_HEIGHT);
+        w = Math.floor(DESIGN_WIDTH * scale);
+        h = Math.floor(DESIGN_HEIGHT * scale);
       }
 
-      createUnityInstance(document.querySelector("#unity-canvas"), {
-        dataUrl: "Build/WebGl Vs 0.3.7.data.unityweb",
-        frameworkUrl: "Build/WebGl Vs 0.3.7.framework.js.unityweb",
-        codeUrl: "Build/WebGl Vs 0.3.7.wasm.unityweb",
-        streamingAssetsUrl: "StreamingAssets",
-        companyName: "NoobsGames",
-        productName: "Idle-Isekai",
-        productVersion: "0.1.13",
-        // matchWebGLToCanvasSize: false, // Uncomment this to separately control WebGL canvas render size and DOM element size.
-        // devicePixelRatio: 1, // Uncomment this to override low DPI rendering on high DPI displays.
+      canvasEl.style.width = w + "px";
+      canvasEl.style.height = h + "px";
+    }
+
+    window.addEventListener("resize", sizeCanvas);
+    window.addEventListener("orientationchange", sizeCanvas);
+    sizeCanvas();
+
+    // =====================================================================
+    //  Unity loader configuration
+    // =====================================================================
+    var buildFolder = "Build";
+    var loaderFile = buildFolder + "/WebGL flexible test.loader.js";
+
+    var unityConfig = {
+      dataUrl: buildFolder + "/WebGL flexible test.data.unityweb",
+      frameworkUrl: buildFolder + "/WebGL flexible test.framework.js.unityweb",
+        codeUrl: buildFolder + "/WebGL flexible test.wasm.unityweb",
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: "NoobsGames",
+      productName: "Idle-Isekai",
+      productVersion: "0.1.13",
+    };
+
+    // =====================================================================
+    //  Boot
+    // =====================================================================
+    var loadingEl = document.getElementById("loading");
+    var fillEl = document.getElementById("progress-fill");
+    var errorEl = document.getElementById("error-box");
+
+    function showError(message) {
+      loadingEl.style.display = "none";
+      errorEl.style.display = "block";
+      errorEl.textContent = message;
+    }
+
+    var loaderScript = document.createElement("script");
+    loaderScript.src = loaderFile;
+
+    loaderScript.onload = function () {
+      createUnityInstance(canvasEl, unityConfig, function (progress) {
+        fillEl.style.width = (progress * 100) + "%";
+      }).then(function () {
+        loadingEl.style.display = "none";
+        // Re-apply the size now that Unity owns the canvas.
+        sizeCanvas();
+      }).catch(function (message) {
+        showError(message);
       });
-    </script>
-  </body>
+    };
+
+    loaderScript.onerror = function () {
+      showError("Failed to load the game build: " + loaderFile);
+    };
+
+    document.body.appendChild(loaderScript);
+  </script>
+</body>
 </html>
