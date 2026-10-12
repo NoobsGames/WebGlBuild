@@ -25,21 +25,44 @@
       var progressBarFull = document.querySelector("#unity-progress-bar-full");
       var warningBanner = document.querySelector("#unity-warning");
 
-      // Fill the whole browser window at any resolution.
-      // FILL_WINDOW = true  -> fill the window (high-DPI/4K friendly).
-      // FILL_WINDOW = false -> keep the design aspect ratio, scale to fit.
+      // FILL_WINDOW = true  -> fill the window, but never wider than MAX_ASPECT.
+      //                        Wider windows get black bars on the sides
+      //                        (pillarbox); too-tall windows get top/bottom bars.
+      // FILL_WINDOW = false -> keep the exact DESIGN aspect ratio, scale to fit.
       var FILL_WINDOW = true;
       var DESIGN_WIDTH = 1280;
       var DESIGN_HEIGHT = 720;
 
+      // Widest / narrowest allowed play area (a ratio of width / height).
+      // 16 / 9 = 1.7778. Anything outside these limits gets black bars.
+      var MAX_ASPECT = 16 / 9;   // side (pillarbox) limit  -- lower it for narrower
+      var MIN_ASPECT = 0;        // top/bottom (letterbox) limit -- 0 = disabled
+
       function resizeCanvas() {
-        var w = window.innerWidth;
-        var h = window.innerHeight;
+        var W = window.innerWidth;
+        var H = window.innerHeight;
+        var w, h;
+
         if (!FILL_WINDOW) {
-          var scale = Math.min(w / DESIGN_WIDTH, h / DESIGN_HEIGHT);
+          var scale = Math.min(W / DESIGN_WIDTH, H / DESIGN_HEIGHT);
           w = Math.floor(DESIGN_WIDTH * scale);
           h = Math.floor(DESIGN_HEIGHT * scale);
+        } else {
+          var aspect = W / H;
+          if (MAX_ASPECT > 0 && aspect > MAX_ASPECT) {
+            // Too wide -> pillarbox: keep height, cap the width, black bars each side.
+            h = H;
+            w = Math.round(H * MAX_ASPECT);
+          } else if (MIN_ASPECT > 0 && aspect < MIN_ASPECT) {
+            // Too tall -> letterbox: keep width, cap the height, black bars top/bottom.
+            w = W;
+            h = Math.round(W / MIN_ASPECT);
+          } else {
+            w = W;
+            h = H;
+          }
         }
+
         canvas.style.width = w + "px";
         canvas.style.height = h + "px";
         container.style.width = w + "px";
@@ -70,11 +93,11 @@
       }
 
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/take 4 .loader.js";
+      var loaderUrl = buildUrl + "/Side bar aspect rasio forcing.loader.js";
       var config = {
-        dataUrl: buildUrl + "/take 4 .data.unityweb",
-        frameworkUrl: buildUrl + "/take 4 .framework.js.unityweb",
-        codeUrl: buildUrl + "/take 4 .wasm.unityweb",
+        dataUrl: buildUrl + "/Side bar aspect rasio forcing.data.unityweb",
+        frameworkUrl: buildUrl + "/Side bar aspect rasio forcing.framework.js.unityweb",
+        codeUrl: buildUrl + "/Side bar aspect rasio forcing.wasm.unityweb",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "NoobsGames",
         productName: "Idle-Isekai",
